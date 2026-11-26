@@ -1,4 +1,3 @@
-# churn-retention
 # Customer Retention Intelligence System
 
 An AI-powered system that predicts which telecom customers are likely to churn, explains why, ranks them by revenue at risk, and recommends specific retention actions.
@@ -6,9 +5,17 @@ An AI-powered system that predicts which telecom customers are likely to churn, 
 **Live demo:** https://churn-retention-by2zm3c5sphfh64blw4ld4.streamlit.app/
 
 <!-- Add screenshots here: Overview, At-risk customers, What-if simulator -->
-![Overview](screenshots/overview.png)
-![At-risk customers](screenshots/at-risk.png)
-![What-if simulator](screenshots/simulator.png)
+![Overview](Screenshot_20261126-205856.jpg)
+
+
+
+
+![At-risk customers](Screenshot_20261126-205907.jpg)
+
+
+
+
+![What-if simulator](Screenshot_20261126-205918.jpg)
 
 ## What it does
 
