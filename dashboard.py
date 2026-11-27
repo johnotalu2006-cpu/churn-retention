@@ -229,30 +229,107 @@ with tab2:
 
 
 with tab3:
-    ranked = data.sort_values("rev_at_risk", ascending=False).customerID.head(200)
-    cid = st.selectbox("Customer", ranked, key="sim")
+    st.subheader("Retention What-if Simulator")
+    st.caption(
+        "Explore how changes to a customer's subscription and services "
+        "may influence their predicted churn risk."
+    )
+
+    ranked = data.sort_values(
+        "rev_at_risk", ascending=False
+    ).customerID.head(200)
+
+    cid = st.selectbox("Select customer", ranked, key="sim")
+
     base = data[data.customerID == cid][COLUMNS].iloc[0].to_dict()
 
     def opts(col):
         o = sorted(data[col].unique())
         return o, o.index(base[col])
 
-    a, b = st.columns(2)
-    charges = a.slider("Monthly charges", 15.0, 125.0, float(base["MonthlyCharges"]))
-    o, i = opts("Contract")
-    contract = a.selectbox("Contract", o, index=i)
-    o, i = opts("PaymentMethod")
-    pay = a.selectbox("Payment method", o, index=i)
-    o, i = opts("TechSupport")
-    tech = b.selectbox("Tech support", o, index=i)
-    o, i = opts("OnlineSecurity")
-    sec = b.selectbox("Online security", o, index=i)
+    st.divider()
+    st.markdown("#### Adjust Customer Details")
 
-    new = {**base, "MonthlyCharges": charges, "Contract": contract,
-           "PaymentMethod": pay, "TechSupport": tech, "OnlineSecurity": sec}
-    p0 = float(cal.predict_proba(pd.DataFrame([base])[COLUMNS])[0, 1])
-    p1 = float(cal.predict_proba(pd.DataFrame([new])[COLUMNS])[0, 1])
-    m1, m2 = st.columns(2)
-    m1.metric("Current risk", f"{p0:.1%}")
-    m2.metric("Simulated risk", f"{p1:.1%}", f"{(p1 - p0) * 100:+.1f} pts", delta_color="inverse")
-    st.caption("Estimated impact from the model, not a guaranteed outcome.")
+    a, b = st.columns(2)
+
+    with a:
+        st.markdown("**Billing and Contract**")
+
+        charges = st.slider(
+            "Monthly charges ($)",
+            15.0,
+            125.0,
+            float(base["MonthlyCharges"])
+        )
+
+        o, i = opts("Contract")
+        contract = st.selectbox("Contract type", o, index=i)
+
+        o, i = opts("PaymentMethod")
+        pay = st.selectbox("Payment method", o, index=i)
+
+    with b:
+        st.markdown("**Additional Services**")
+
+        o, i = opts("TechSupport")
+        tech = st.selectbox("Tech support", o, index=i)
+
+        o, i = opts("OnlineSecurity")
+        sec = st.selectbox("Online security", o, index=i)
+
+    new = {
+        **base,
+        "MonthlyCharges": charges,
+        "Contract": contract,
+        "PaymentMethod": pay,
+        "TechSupport": tech,
+        "OnlineSecurity": sec
+    }
+
+    p0 = float(
+        cal.predict_proba(pd.DataFrame([base])[COLUMNS])[0, 1]
+    )
+
+    p1 = float(
+        cal.predict_proba(pd.DataFrame([new])[COLUMNS])[0, 1]
+    )
+
+    change = (p1 - p0) * 100
+
+    st.divider()
+    st.markdown("#### Risk Comparison")
+
+    m1, m2, m3 = st.columns(3)
+
+    m1.metric("Current Churn Risk", f"{p0:.1%}")
+
+    m2.metric(
+        "Simulated Churn Risk",
+        f"{p1:.1%}",
+        f"{change:+.1f} percentage points",
+        delta_color="inverse"
+    )
+
+    m3.metric(
+        "Risk Category",
+        risk_level(p1)
+    )
+
+    if change < 0:
+        st.success(
+            f"The simulated changes reduce predicted churn risk "
+            f"by {abs(change):.1f} percentage points."
+        )
+    elif change > 0:
+        st.warning(
+            f"The simulated changes increase predicted churn risk "
+            f"by {change:.1f} percentage points."
+        )
+    else:
+        st.info("The simulated changes do not alter predicted churn risk.")
+
+    st.caption(
+        "These are model-based estimates, not guaranteed outcomes. "
+        "The simulation does not establish that changing these factors "
+        "will causally reduce churn."
+    )
