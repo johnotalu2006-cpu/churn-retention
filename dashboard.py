@@ -113,32 +113,120 @@ with right:
         showlegend=False
     )
     st.plotly_chart(fig2, use_container_width=True)
+
 with tab2:
+    st.subheader("Customer Risk Explorer")
+    st.caption("Filter customers by churn risk and contract type, then inspect individual customers.")
+
     f1, f2 = st.columns(2)
-    levels = f1.multiselect("Risk level", ["High", "Medium", "Low"], default=["High"])
+
+    levels = f1.multiselect(
+        "Risk level",
+        ["High", "Medium", "Low"],
+        default=["High"]
+    )
+
     all_contracts = sorted(data.Contract.unique())
-    contracts = f2.multiselect("Contract", all_contracts, default=all_contracts)
-    view = data[data.risk_level.isin(levels) & data.Contract.isin(contracts)]
-    view = view.sort_values("rev_at_risk", ascending=False)
-    st.caption(f"{len(view):,} customers | ${view.rev_at_risk.sum():,.0f} per month at risk")
-    cols = ["customerID", "Contract", "tenure", "MonthlyCharges", "churn_prob", "risk_level", "rev_at_risk"]
-    st.dataframe(view[cols].head(200), use_container_width=True, hide_index=True)
+    contracts = f2.multiselect(
+        "Contract type",
+        all_contracts,
+        default=all_contracts
+    )
+
+    view = data[
+        data.risk_level.isin(levels) &
+        data.Contract.isin(contracts)
+    ].sort_values("rev_at_risk", ascending=False)
+
+    st.divider()
+
+    m1, m2 = st.columns(2)
+    m1.metric("Customers matching filters", f"{len(view):,}")
+    m2.metric("Monthly revenue at risk", f"${view.rev_at_risk.sum():,.0f}")
+
+    st.subheader("Customer List")
+
+    cols = [
+        "customerID", "Contract", "tenure",
+        "MonthlyCharges", "churn_prob",
+        "risk_level", "rev_at_risk"
+    ]
+
+    display = view[cols].head(200).rename(columns={
+        "customerID": "Customer ID",
+        "Contract": "Contract",
+        "tenure": "Tenure (months)",
+        "MonthlyCharges": "Monthly Charges ($)",
+        "churn_prob": "Churn Probability",
+        "risk_level": "Risk Level",
+        "rev_at_risk": "Monthly Revenue at Risk ($)"
+    })
+
+    display["Churn Probability"] = display["Churn Probability"].map(
+        lambda x: f"{x:.1%}"
+    )
+    display["Monthly Charges ($)"] = display["Monthly Charges ($)"].map(
+        lambda x: f"${x:,.2f}"
+    )
+    display["Monthly Revenue at Risk ($)"] = display[
+        "Monthly Revenue at Risk ($)"
+    ].map(lambda x: f"${x:,.2f}")
+
+    st.dataframe(
+        display,
+        use_container_width=True,
+        hide_index=True
+    )
+
+    st.divider()
+    st.subheader("Customer Inspection")
 
     if len(view):
-        cid = st.selectbox("Inspect a customer", view.customerID.head(200))
+        cid = st.selectbox(
+            "Select a customer to inspect",
+            view.customerID.head(200)
+        )
+
         row = data[data.customerID == cid]
         x1 = row[COLUMNS].reset_index(drop=True)
         p = float(row.churn_prob.iloc[0])
-        st.markdown(f"**Churn risk:** {p:.1%} ({risk_level(p)})")
+
+        st.markdown(f"**Customer ID:** {cid}")
+
+        a, b, c = st.columns(3)
+        a.metric("Churn Risk", f"{p:.1%}")
+        b.metric("Risk Category", risk_level(p))
+        c.metric(
+            "Monthly Charges",
+            f"${float(row.MonthlyCharges.iloc[0]):,.2f}"
+        )
+
+        st.markdown("#### Main Risk Drivers")
+
         reasons = top_reasons(x1)[0]
-        st.markdown("**Main drivers:** " + (", ".join(reasons) if reasons else "none flagged"))
-        acts = ranked_actions(x1, np.array([p]))[0]
-        if acts:
-            st.markdown("**Recommended actions (model-estimated impact):**")
-            for a in acts:
-                st.write(f"- {a['action']}: about {a['estimated_risk_reduction_pts']} points lower risk")
+
+        if reasons:
+            for reason in reasons:
+                st.write(f"• {reason}")
         else:
-            st.markdown("**Recommended actions:** Monitor only")
+            st.write("No major risk drivers flagged.")
+
+        st.markdown("#### Recommended Retention Actions")
+
+        acts = ranked_actions(x1, np.array([p]))[0]
+
+        if acts:
+            for a in acts:
+                st.write(
+                    f"• **{a['action']}** — estimated risk reduction: "
+                    f"{a['estimated_risk_reduction_pts']} points"
+                )
+        else:
+            st.write("Monitor this customer.")
+
+    else:
+        st.info("No customers match the selected filters.")
+
 
 with tab3:
     ranked = data.sort_values("rev_at_risk", ascending=False).customerID.head(200)
