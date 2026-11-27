@@ -34,38 +34,37 @@ tab1, tab2, tab3 = st.tabs(["Overview", "At-risk customers", "What-if simulator"
 
 with tab1:
     st.markdown("""
-<style>
-div[data-testid="stMetric"] {
-    background: linear-gradient(145deg, #162235, #1D3048);
-    border: 1px solid #29415C;
-    padding: 22px 18px;
-    border-radius: 14px;
-    box-shadow: 0 4px 14px rgba(0,0,0,0.15);
-}
-div[data-testid="stMetricLabel"] {
-    color: #A9BED3;
-    font-size: 14px;
-}
-div[data-testid="stMetricValue"] {
-    color: #F1F5F9;
-    font-size: 27px;
-    font-weight: 700;
-}
-</style>
-""", unsafe_allow_html=True)
+    <style>
+    div[data-testid="stMetric"] {
+        background: linear-gradient(145deg, #162235, #1D3048);
+        border: 1px solid #29415C;
+        padding: 22px 18px;
+        border-radius: 14px;
+        box-shadow: 0 4px 14px rgba(0,0,0,0.15);
+    }
+    div[data-testid="stMetricLabel"] {
+        color: #A9BED3;
+        font-size: 14px;
+    }
+    div[data-testid="stMetricValue"] {
+        color: #F1F5F9;
+        font-size: 27px;
+        font-weight: 700;
+    }
+    </style>
+    """, unsafe_allow_html=True)
 
-c1, c2, c3, c4 = st.columns(4)
+    c1, c2, c3, c4 = st.columns(4)
+    c1.metric("TOTAL CUSTOMERS", f"{len(data):,}")
+    c2.metric("AVERAGE CHURN RISK", f"{data.churn_prob.mean():.1%}")
+    c3.metric("MONTHLY REVENUE AT RISK", f"${data.rev_at_risk.sum():,.0f}")
+    c4.metric("ANNUAL REVENUE AT RISK", f"${data.rev_at_risk.sum() * 12:,.0f}")
 
-c1.metric("TOTAL CUSTOMERS", f"{len(data):,}")
-c2.metric("AVERAGE CHURN RISK", f"{data.churn_prob.mean():.1%}")
-c3.metric("MONTHLY REVENUE AT RISK", f"${data.rev_at_risk.sum():,.0f}")
-c4.metric("ANNUAL REVENUE AT RISK", f"${data.rev_at_risk.sum() * 12:,.0f}")
     left, right = st.columns(2)
     left.subheader("Revenue at risk by contract")
     left.bar_chart(data.groupby("Contract").rev_at_risk.sum())
     right.subheader("Customers by risk level")
     right.bar_chart(data.risk_level.value_counts().reindex(["Low", "Medium", "High"]))
-
 with tab2:
     f1, f2 = st.columns(2)
     levels = f1.multiselect("Risk level", ["High", "Medium", "Low"], default=["High"])
