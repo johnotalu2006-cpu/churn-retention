@@ -61,10 +61,57 @@ with tab1:
     c4.metric("ANNUAL REVENUE AT RISK", f"${data.rev_at_risk.sum() * 12:,.0f}")
 
     left, right = st.columns(2)
-    left.subheader("Revenue at risk by contract")
-    left.bar_chart(data.groupby("Contract").rev_at_risk.sum())
-    right.subheader("Customers by risk level")
-    right.bar_chart(data.risk_level.value_counts().reindex(["Low", "Medium", "High"]))
+
+with left:
+    st.subheader("Revenue at Risk by Contract")
+    contract_data = (
+        data.groupby("Contract", as_index=False)["rev_at_risk"]
+        .sum()
+        .sort_values("rev_at_risk", ascending=False)
+    )
+
+    fig1 = px.bar(
+        contract_data,
+        x="Contract",
+        y="rev_at_risk",
+        text_auto=",.0f",
+        title=None,
+        labels={
+            "Contract": "Contract Type",
+            "rev_at_risk": "Monthly Revenue at Risk ($)"
+        },
+        template="plotly_dark"
+    )
+    fig1.update_layout(
+        margin=dict(l=10, r=10, t=20, b=10),
+        showlegend=False
+    )
+    st.plotly_chart(fig1, use_container_width=True)
+
+with right:
+    st.subheader("Customers by Risk Level")
+    risk_data = (
+        data["risk_level"]
+        .value_counts()
+        .reindex(["Low", "Medium", "High"])
+        .fillna(0)
+        .rename_axis("Risk Level")
+        .reset_index(name="Customers")
+    )
+
+    fig2 = px.bar(
+        risk_data,
+        x="Risk Level",
+        y="Customers",
+        text="Customers",
+        category_orders={"Risk Level": ["Low", "Medium", "High"]},
+        template="plotly_dark"
+    )
+    fig2.update_layout(
+        margin=dict(l=10, r=10, t=20, b=10),
+        showlegend=False
+    )
+    st.plotly_chart(fig2, use_container_width=True)
 with tab2:
     f1, f2 = st.columns(2)
     levels = f1.multiselect("Risk level", ["High", "Medium", "Low"], default=["High"])
