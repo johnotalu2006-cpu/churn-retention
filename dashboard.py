@@ -4,6 +4,7 @@ import os
 import numpy as np
 import pandas as pd
 import streamlit as st
+import plotly.express as px
 
 if not os.path.exists("churn_model_calibrated.joblib"):
     import train  # noqa: F401  (builds the model files on first run)
