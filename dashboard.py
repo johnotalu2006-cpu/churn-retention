@@ -685,7 +685,7 @@ elif page == "Retention Simulator":
     m3.metric(
         "Simulated Risk Category",
         risk_level(simulated_probability)
-    ),
+    )
 
     if change < 0:
 
