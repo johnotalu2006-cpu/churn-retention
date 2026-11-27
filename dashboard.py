@@ -187,6 +187,23 @@ data = load()
 # SIDEBAR NAVIGATION
 # --------------------------------------------------
 
+st.markdown("""
+<style>
+[data-testid="stSidebar"] {
+    min-width: 230px;
+    max-width: 230px;
+}
+
+[data-testid="stSidebar"][aria-expanded="true"] {
+    width: 230px;
+}
+
+[data-testid="stMainBlockContainer"] {
+    padding-left: 2rem;
+    padding-right: 2rem;
+}
+</style>
+""", unsafe_allow_html=True)
 with st.sidebar:
     st.markdown("## 📊 RETENTION AI")
     st.caption("CUSTOMER INTELLIGENCE PLATFORM")
